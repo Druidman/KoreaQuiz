@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: process.cwd(),
   },
+  allowedDevOrigins: ['korea.1lounge.test'],
 };
 
 export default nextConfig;

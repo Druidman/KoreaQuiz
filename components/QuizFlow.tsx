@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { getSupabase } from "@/lib/supabase";
+import { useCallback, useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
+import { displayName, getSupabase } from "@/lib/supabase";
 import type { DbQuestion, Selections } from "@/lib/types";
 import {
   collectDeviceMetadata,
@@ -13,6 +14,7 @@ import { QuizCard } from "@/components/QuizCard";
 import { ThankYouCard } from "@/components/ThankYouCard";
 
 type Stage = "join" | "quiz" | "submitting" | "done";
+type Account = { status: "loading" } | { status: "guest" } | { status: "user"; user: User };
 function shuffleArr<T>(arr: T[]){
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -25,24 +27,67 @@ export function QuizFlow() {
   const [error, setError] = useState<string | null>(null);
   const [questions, setQuestions] = useState<DbQuestion[] | null>(null);
 
-  /** Step 1–3 of the flow: anon sign-in -> profile row -> fetch questions. */
+  // Session shared with 1lounge (cookie on the common domain). Anonymous
+  // sessions left over from an earlier attempt don't count as an account.
+  const [account, setAccount] = useState<Account>({ status: "loading" });
+
+  useEffect(() => {
+    let supabase;
+    try {
+      supabase = getSupabase();
+    } catch {
+      queueMicrotask(() => setAccount({ status: "guest" }));
+      return;
+    }
+    // Fires INITIAL_SESSION right away, then on every sign-in / sign-out.
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      const user = session?.user;
+      setAccount(user && !user.is_anonymous ? { status: "user", user } : { status: "guest" });
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
+
+  const accountUser = account.status === "user" ? account.user : null;
+
+  /**
+   * Step 1–3 of the flow: account -> profile row -> fetch questions.
+   * Requires a 1lounge login (shared cookie session); nick = account name.
+   */
   const startQuiz = useCallback(async (nickname: string) => {
     setError(null);
     try {
       const supabase = getSupabase();
 
-      const { error: authError } = await supabase.auth.signInAnonymously();
-      if (authError) throw authError;
-      const uid = (await supabase.auth.getUser()).data.user?.id;
-      if (!uid) throw new Error("Nie udało się zalogować anonimowo.");
+      const uid = accountUser?.id;
+      if (!uid) throw new Error("Zaloguj się, żeby zagrać.");
 
-      const baseMeta = collectDeviceMetadata();
-      const meta = await enrichDeviceMetadata(baseMeta);
-      const { error: profileError } = await supabase.from("profiles").insert({
-        nickname: nickname.trim(),
-        metadata: { ...meta, device_fingerprint: getDeviceFingerprint() },
-      });
-      if (profileError) throw profileError;
+      // A real account can come back later: one attempt per account
+      // (profiles PK + one answer per question).
+      const { data: existingProfile, error: profileReadError } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .eq("user_id", uid)
+        .maybeSingle();
+      if (profileReadError) throw profileReadError;
+
+      if (existingProfile) {
+        const { count, error: answersReadError } = await supabase
+          .from("user_answers")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", uid);
+        if (answersReadError) throw answersReadError;
+        if ((count ?? 0) > 0) {
+          throw new Error("Ten quiz został już rozwiązany na tym koncie.");
+        }
+      } else {
+        const baseMeta = collectDeviceMetadata();
+        const meta = await enrichDeviceMetadata(baseMeta);
+        const { error: profileError } = await supabase.from("profiles").insert({
+          nickname: nickname.trim(),
+          metadata: { ...meta, device_fingerprint: getDeviceFingerprint() },
+        });
+        if (profileError) throw profileError;
+      }
 
       const { data, error: questionsError } = await supabase
         .from("questions_with_options")
@@ -65,13 +110,15 @@ export function QuizFlow() {
       setStage("quiz");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Coś poszło nie tak. Spróbuj ponownie.");
-      // A half-finished attempt may have left a session behind — clean it up.
-      try {
-        await getSupabase().auth.signOut();
-      } catch {
-        /* ignore */
-      }
     }
+  }, [accountUser]);
+
+  /** Sign out (shared cookie → also logs out of 1lounge). */
+  const signOut = useCallback(async () => {
+    setError(null);
+    const { error: signOutError } = await getSupabase().auth.signOut();
+    if (signOutError) setError(signOutError.message);
+    // onAuthStateChange flips `account` to guest → JoinCard shows "Zaloguj się".
   }, []);
 
   /** Step 4: insert one user_answers row per question. */
@@ -127,7 +174,15 @@ export function QuizFlow() {
             {error}
           </div>
         )}
-        {stage === "join" && <JoinCard onStart={startQuiz} />}
+        {stage === "join" && (
+          <JoinCard
+            onStart={startQuiz}
+            onSignOut={signOut}
+            loading={account.status === "loading"}
+            accountName={accountUser ? displayName(accountUser) : null}
+            accountEmail={accountUser?.email ?? null}
+          />
+        )}
         {stage !== "join" && questions && (
           <QuizCard questions={questions} busy={stage === "submitting"} onSubmit={submitQuiz} />
         )}
