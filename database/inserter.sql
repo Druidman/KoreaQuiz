@@ -53,6 +53,11 @@ begin
     "question": "Który popularny serial Netflixa pochodzi z Korei Południowej?",
     "options": ["Squid Game", "Stranger Things", "Wednesday", "Dom z papieru"],
     "duration": 20
+  },
+  {
+    "question": "Jak nazywa się waluta Korei Północnej?",
+    "options": ["won północnokoreański", "jen", "juan", "rubel"],
+    "duration": 20
   }
 ]
     $json$::jsonb)

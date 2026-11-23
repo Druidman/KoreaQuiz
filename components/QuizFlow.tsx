@@ -59,7 +59,7 @@ export function QuizFlow() {
         throw new Error("Nie znaleziono pytań w bazie. Skontaktuj się z prowadzącym.");
       }
 
-      
+      shuffleArr(fetched)
 
       setQuestions((fetched as DbQuestion[] | null)?.map((question)=>{shuffleArr(question.options || []); return question;}) || []);
       setStage("quiz");
