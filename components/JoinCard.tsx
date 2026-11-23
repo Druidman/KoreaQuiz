@@ -35,7 +35,7 @@ export function JoinCard({ onStart }: { onStart: (nickname: string) => Promise<v
       <div className="relative z-10">
         <h1 className="mb-6 text-center font-display text-4xl font-extrabold tracking-[-0.02em] text-ink sm:text-5xl">
           <span className="relative inline-block">
-            Skibidi <Highlight>quiz</Highlight>
+            Koreański <Highlight>quiz</Highlight>
             <Sparkle className="absolute -right-6 -top-4 h-7 w-7 rotate-[12deg]" />
           </span>
         </h1>
@@ -50,7 +50,7 @@ export function JoinCard({ onStart }: { onStart: (nickname: string) => Promise<v
             Twój <Highlight className="text-ink">nick</Highlight>
           </label>
           <p className="mb-4 text-sm font-semibold text-ink-soft">
-            Tak żebym ciebie mógł rozpoznać bo Pan będzie chciał odpowiedzi
+            Proszę nie obraźliwy😭😭😭
           </p>
 
           <input
@@ -65,7 +65,7 @@ export function JoinCard({ onStart }: { onStart: (nickname: string) => Promise<v
             spellCheck={false}
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
-            placeholder="np. alek_w5a"
+            placeholder="np. szarpichrust_bożydar67"
             className="w-full rounded-[16px_12px_18px_12px] border-[2.5px] border-ink/20 bg-blush px-4 py-3 text-base font-bold text-ink transition placeholder:text-ink/45 focus:border-pink-deep focus:bg-paper focus:shadow-[4px_4px_0_var(--color-pink-soft)] focus:outline-none"
           />
 

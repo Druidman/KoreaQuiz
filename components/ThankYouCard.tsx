@@ -49,11 +49,11 @@ export function ThankYouCard() {
             Twoje odpowiedzi zostały zapisane.
           </p>
           <p className="mt-3 text-base font-semibold text-ink-soft sm:text-lg">
-            Możesz już spokojnie zamknąć tę stronę.
+            Możesz zamknąć tę kartę (zapamiętaj swój nick)
           </p>
         </div>
 
-        <p className="mt-8 text-sm font-bold text-ink-soft">💀💀Jutro sprawdzian z matmy...💀💀</p>
+        
       </div>
     </section>
   );

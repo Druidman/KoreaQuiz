@@ -13,7 +13,13 @@ import { QuizCard } from "@/components/QuizCard";
 import { ThankYouCard } from "@/components/ThankYouCard";
 
 type Stage = "join" | "quiz" | "submitting" | "done";
-
+function shuffleArr<T>(arr: T[]){
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+      
 export function QuizFlow() {
   const [stage, setStage] = useState<Stage>("join");
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +59,9 @@ export function QuizFlow() {
         throw new Error("Nie znaleziono pytań w bazie. Skontaktuj się z prowadzącym.");
       }
 
-      setQuestions(fetched);
+      
+
+      setQuestions((fetched as DbQuestion[] | null)?.map((question)=>{shuffleArr(question.options || []); return question;}) || []);
       setStage("quiz");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Coś poszło nie tak. Spróbuj ponownie.");

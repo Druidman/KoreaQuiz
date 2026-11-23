@@ -10,99 +10,48 @@ begin
     select * from jsonb_array_elements($json$
 [
   {
-    "question": "Którzy politycy przedstawili dwie różne wizje zjednoczenia Europy na początku integracji?",
-    "options": [
-      "Jean Monnet i Charles de Gaulle",
-      "Robert Schuman i Konrad Adenauer",
-      "Alcide de Gasperi i Winston Churchill",
-      "Charles de Gaulle i Konrad Adenauer"
-    ],
-    "duration": 15
-  },
-  {
-    "question": "Jakie trzy państwa utworzyły Beneluks?",
-    "options": [
-      "Belgia, Holandia i Luksemburg",
-      "Belgia, Francja i Luksemburg",
-      "Holandia, Niemcy i Belgia",
-      "Luksemburg, Włochy i Holandia"
-    ],
-    "duration": 15
-  },
-  {
-    "question": "W którym roku powstała Rada Europy i z czyjej inicjatywy?",
-    "options": [
-      "1949 r.; Schuman, Adenauer, de Gasperi",
-      "1951 r.; Schuman, Adenauer, de Gasperi",
-      "1949 r.; Monnet, de Gaulle, Churchill",
-      "1957 r.; Monnet, Adenauer, de Gasperi"
-    ],
-    "duration": 15
-  },
-  {
-    "question": "Na mocy jakiego traktatu i kiedy powołano Europejską Wspólnotę Węgla i Stali?",
-    "options": [
-      "Traktat paryski, 18 kwietnia 1951 r.",
-      "Traktat rzymski, 25 marca 1957 r.",
-      "Traktat paryski, 25 marca 1957 r.",
-      "Traktat rzymski, 18 kwietnia 1951 r."
-    ],
-    "duration": 15
-  },
-  {
-    "question": "Co powstało na mocy traktatów rzymskich z 1957 r.?",
-    "options": [
-      "EWG i Euratom",
-      "EWWiS i EFTA",
-      "OEEC i Rada Europy",
-      "EFTA i OECD"
-    ],
-    "duration": 15
-  },
-  {
-    "question": "Która z poniższych zmian NIE była wynikiem Soboru Watykańskiego II?",
-    "options": [
-      "Wprowadzenie mszy wyłącznie po łacinie",
-      "Msza w językach narodowych odprawiana przodem do ludzi",
-      "Zniesienie indeksu ksiąg zakazanych",
-      "Zniesienie ekskomunik z 1054 r. między Kościołem rzymskim a prawosławnym"
-    ],
+    "question": "Jaka jest stolica Korei Południowej?",
+    "options": ["Seul", "Pusan", "Pjongjang", "Tokio"],
     "duration": 20
   },
   {
-    "question": "Jaką metodę walki stosował Martin Luther King i co osiągnięto do 1964 r.?",
-    "options": [
-      "Bierny opór; ustawa o równości obywateli i Pokojowa Nagroda Nobla",
-      "Walka zbrojna; ustawa o równości obywateli i Pokojowa Nagroda Nobla",
-      "Bierny opór; likwidacja Ku-Klux-Klanu i Nagroda Nobla w dziedzinie literatury",
-      "Strajki generalne; ustawa o równości obywateli i Order Orła Białego"
-    ],
+    "question": "Jak nazywa się waluta Korei Południowej?",
+    "options": ["won", "jen", "juan", "rupia"],
+    "duration": 20
+  },
+  {
+    "question": "Jak nazywa się słynna koreańska kiszona kapusta z ostrą papryką?",
+    "options": ["kimchi", "sushi", "ramen", "tofu"],
+    "duration": 20
+  },
+  {
+    "question": "Jak nazywa się koreański alfabet?",
+    "options": ["hangul", "kanji", "hiragana", "cyrylica"],
     "duration": 30
   },
   {
-    "question": "Czym charakteryzowały się państwa dobrobytu w powojennej Europie Zachodniej?",
-    "options": [
-      "Gospodarką rynkową i pomocą dla uboższych",
-      "Gospodarką centralnie planowaną i zakazem związków zawodowych",
-      "Pełną prywatyzacją przemysłu bez pomocy socjalnej",
-      "Likwidacją własności prywatnej"
-    ],
+    "question": "Z jakim krajem Korea Południowa ma granicę lądową?",
+    "options": ["z Koreą Północną", "z Chinami", "z Japonią", "z Rosją"],
     "duration": 20
   },
   {
-    "question": "Jakie zjawisko związane jest bezpośrednio z wprowadzeniem pigułki antykoncepcyjnej w 1960 r.?",
-    "options": [],
-    "open_model": "Rewolucja seksualna",
-    "duration": 50
+    "question": "W którym roku w Seulu odbyły się letnie igrzyska olimpijskie?",
+    "options": ["1988", "1976", "1980", "2000"],
+    "duration": 30
   },
   {
-    "question": "Kim była Betty Friedan?",
-    "options": [
-      "Ideolożką feminizmu, założycielką NOW i autorką „Mistyki kobiecości”",
-      "Pierwszą kobietą premierem Wielkiej Brytanii",
-      "Liderką ruchu hipisowskiego",
-      "Autorką ustawy o równości obywateli USA"
-    ],
+    "question": "Jakie jest drugie największe miasto Korei Południowej, duży port nad morzem?",
+    "options": ["Pusan (Busan)", "Osaka", "Szanghaj", "Hanoi"],
+    "duration": 30
+  },
+  {
+    "question": "Ilu mniej więcej mieszkańców ma Korea Południowa?",
+    "options": ["51 mln", "5 mln", "20 mln", "150 mln"],
+    "duration": 30
+  },
+  {
+    "question": "Który popularny serial Netflixa pochodzi z Korei Południowej?",
+    "options": ["Squid Game", "Stranger Things", "Wednesday", "Dom z papieru"],
     "duration": 20
   }
 ]
