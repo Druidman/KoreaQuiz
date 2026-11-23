@@ -1,0 +1,187 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-paper: #ffffff; /* page + cards, dominant */
+  --color-blush: #fff1f6; /* inputs, unselected options, panels */
+  --color-ink: #1e1533; /* text, outlines, sticker shadows */
+  --color-ink-soft: #5b5070; /* secondary text, counters */
+  --color-pink: #ff4f9a; /* decor, progress fill */
+  --color-pink-deep: #d3166c; /* primary button, selected option (white text, 5.2:1) */
+  --color-pink-press: #b8105c; /* primary hover */
+  --color-pink-soft: #ffb8d6; /* card shadows, focus shadow */
+  --color-mint: #2ed3b7; /* decor, timer dot, success badge */
+  --color-mint-deep: #0b7a6a; /* success text */
+  --color-butter: #ffe14d; /* highlighter, washi tape, stickers */
+  --color-lilac: #a98bff; /* decor only, sparingly */
+  --color-alert: #e11d48; /* timer <=5 s, errors */
+  --font-sans: var(--ff-nunito), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--ff-unbounded), ui-sans-serif, system-ui, sans-serif;
+  --font-hangul: var(--ff-jua), sans-serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: #ffffff;
+  background-image: radial-gradient(#ffd6e7 1.2px, transparent 1.6px); /* sparse pink dots */
+  background-size: 26px 26px;
+  color: var(--color-ink);
+  font-family: var(--ff-nunito), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* yellow highlighter behind a word */
+.hl {
+  background: linear-gradient(
+    transparent 58%,
+    var(--color-butter) 58%,
+    var(--color-butter) 92%,
+    transparent 92%
+  );
+  padding: 0 4px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* gentle float for stickers */
+@keyframes bob {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -6px;
+  }
+}
+.bob {
+  animation: bob 3.4s ease-in-out infinite;
+}
+.bob2 {
+  animation: bob 4.1s ease-in-out infinite reverse;
+}
+
+.sticker-shadow {
+  filter: drop-shadow(3px 3px 0 var(--color-ink));
+}
+
+@keyframes pop-in {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.pop-in {
+  animation: pop-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes pulse-urgent {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+.pulse-urgent {
+  animation: pulse-urgent 1s ease-in-out infinite;
+}
+
+/* ---------- /results page ---------- */
+
+/* falling confetti behind the results page */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+.confetti-piece {
+  opacity: 0;
+}
+
+/* 3D flip used by the reveal cards */
+.flip-scene {
+  perspective: 1000px;
+}
+.flip-inner {
+  transform-style: preserve-3d;
+  transition: transform 0.55s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+.flip-inner.flipped {
+  transform: rotateY(180deg);
+}
+.flip-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.flip-back {
+  transform: rotateY(180deg);
+}
+
+/* slow diagonal sheen across the two champion cards */
+@keyframes shimmer-sweep {
+  0% {
+    transform: translateX(-120%) skewX(-18deg);
+  }
+  100% {
+    transform: translateX(340%) skewX(-18deg);
+  }
+}
+.shimmer::after {
+  content: "";
+  position: absolute;
+  top: -10%;
+  bottom: -10%;
+  left: 0;
+  width: 34%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+  animation: shimmer-sweep 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* gentle bobbing crown on the champion cards */
+@keyframes crown-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-4deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(4deg);
+  }
+}
+.crown-bob {
+  animation: crown-bob 2.2s ease-in-out infinite;
+  display: inline-block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bob,
+  .bob2,
+  .pulse-urgent,
+  .pop-in,
+  .crown-bob,
+  .shimmer::after,
+  .confetti-piece {
+    animation: none !important;
+  }
+}
