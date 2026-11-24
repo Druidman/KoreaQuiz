@@ -2,18 +2,8 @@
 
 import { useState } from "react";
 import { Blob, HangulSticker, Highlight, Lightstick, Sparkle, Star, Tape } from "@/components/decor";
+import { LOGIN_URL, LOUNGE_URL } from "@/lib/lounge";
 
-/** 1lounge sign-in page (shared Supabase session via cookie domain). */
-// NEXT_PUBLIC_BASE_LOUNGE_DOMAIN may be a bare host ("1lounge.test:3000");
-// without a protocol we use a protocol-relative URL ("//host") so it follows
-// the current page's http/https.
-const LOUNGE_BASE = process.env.NEXT_PUBLIC_BASE_LOUNGE_DOMAIN?.trim().replace(/\/+$/, "");
-const LOUNGE_URL = LOUNGE_BASE
-  ? /^https?:\/\//.test(LOUNGE_BASE)
-    ? LOUNGE_BASE
-    : `//${LOUNGE_BASE.replace(/^\/+/, "")}`
-  : null;
-const LOGIN_URL = LOUNGE_URL ? `${LOUNGE_URL}/login` : null;
 
 /** Send the user to 1lounge login, asking it to bring them back here afterwards. */
 function goToLogin(e: React.MouseEvent<HTMLAnchorElement>) {
@@ -32,12 +22,17 @@ function goToLogin(e: React.MouseEvent<HTMLAnchorElement>) {
 export function JoinCard({
   onStart,
   onSignOut,
+  finished = false,
+  onShowSummary,
   loading = false,
   accountName = null,
   accountEmail = null,
 }: {
   onStart: (nickname: string) => Promise<void>;
   onSignOut: () => Promise<void>;
+  /** Account already has a finished_quizes row → button opens the summary. */
+  finished?: boolean;
+  onShowSummary: () => void;
   /** Session still being read – don't flash the login button. */
   loading?: boolean;
   /** Display name of the logged-in account, or null for guests. */
@@ -52,6 +47,10 @@ export function JoinCard({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit || !accountName) return;
+    if (finished) {
+      onShowSummary();
+      return;
+    }
     setBusy(true);
     await onStart(accountName);
     setBusy(false);
@@ -207,13 +206,13 @@ export function JoinCard({
               disabled={!canSubmit}
               className="mt-5 w-full rounded-[18px_12px_18px_14px] border-[2.5px] border-ink bg-pink-deep px-5 py-3.5 text-base font-extrabold text-white shadow-[4px_4px_0_var(--color-ink)] transition enabled:hover:bg-pink-press active:translate-x-0.5 active:translate-y-0.5 active:shadow-[2px_2px_0_var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none sm:text-lg"
             >
-              {busy ? "Wchodzę do quizu…" : "Zaczynamy!"}
+              {finished ? "Zobacz podsumowanie" : busy ? "Wchodzę do quizu…" : "Zaczynamy!"}
             </button>
           )}
         </form>
 
         <p className="mt-5 text-center text-sm font-bold text-ink-soft">
-          10 pytań · Uważaj na czas · nie da się wrócić do poprzednich
+          10 pytań · Brak odpowiedzi w czasie = quiz od nowa · nie da się wrócić do poprzednich
         </p>
       </div>
     </section>

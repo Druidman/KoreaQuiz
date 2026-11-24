@@ -26,8 +26,9 @@ function isOpenQuestion(question: DbQuestion | undefined): boolean {
 
 /**
  * Stage 2: one question at a time, forward-only. Each question has its own
- * countdown (`duration` seconds from the questions table) — expiry auto-advances,
- * or auto-submits on the last question. Closed questions are answered with
+ * countdown (`duration` seconds from the questions table). On expiry an answered
+ * question auto-advances (or auto-submits on the last one); an unanswered one
+ * opens a "Czas minął" dialog that restarts the whole quiz (onRestart). Closed questions are answered with
  * option buttons; open questions (no options in the DB) with a free-text area.
  * Answers stay changeable while the question is on screen and are
  * batch-inserted into user_answers on submit.
@@ -36,14 +37,19 @@ export function QuizCard({
   questions,
   busy,
   onSubmit,
+  onRestart,
 }: {
   questions: DbQuestion[];
   busy: boolean;
   onSubmit: (selections: Selections) => Promise<void>;
+  /** Time ran out on an unanswered question → start the whole quiz over. */
+  onRestart: () => void;
 }) {
   const [index, setIndex] = useState(0);
   const [selections, setSelections] = useState<Selections>({});
   const [secondsLeft, setSecondsLeft] = useState(() => durationOf(questions[0]));
+  /** Set when the timer expired without an answer; shows the restart dialog. */
+  const [timedOut, setTimedOut] = useState(false);
 
   const question = questions[index];
   const durationSec = durationOf(question);
@@ -84,9 +90,9 @@ export function QuizCard({
   }
 
   // Latest values for the timer's expiry callback (closures would go stale).
-  const latestRef = useRef({ busy, isLast, selections });
+  const latestRef = useRef({ busy, isLast, selections, answered: answeredForQuestion, timedOut });
   useEffect(() => {
-    latestRef.current = { busy, isLast, selections };
+    latestRef.current = { busy, isLast, selections, answered: answeredForQuestion, timedOut };
   });
 
   // Guards so a Dalej click and a timer tick landing in the same instant
@@ -114,13 +120,13 @@ export function QuizCard({
   );
 
   const tryAdvance = useCallback(() => {
-    if (advancingRef.current || latestRef.current.busy) return;
+    if (advancingRef.current || latestRef.current.busy || latestRef.current.timedOut) return;
     advancingRef.current = true;
     setIndex((i) => Math.min(i + 1, questions.length - 1));
   }, [questions.length]);
 
   const trySubmit = useCallback(() => {
-    if (submittingRef.current || latestRef.current.busy) return;
+    if (submittingRef.current || latestRef.current.busy || latestRef.current.timedOut) return;
     submittingRef.current = true;
     // submitQuiz handles its own errors, but never let this ref stay stuck.
     Promise.resolve(onSubmit(latestRef.current.selections))
@@ -144,6 +150,11 @@ export function QuizCard({
       setSecondsLeft(0);
       // Expiry while a submit is in flight is suppressed — the submit flow owns the UI.
       if (latestRef.current.busy) return;
+      // No answer in time → no skipping: the whole quiz has to be restarted.
+      if (!latestRef.current.answered) {
+        setTimedOut(true);
+        return;
+      }
       if (latestRef.current.isLast) trySubmit();
       else tryAdvance();
     }, 250);
@@ -264,7 +275,7 @@ export function QuizCard({
           {isLast ? (
             <button
               type="button"
-              disabled={answeredCount === 0 || busy}
+              disabled={!answeredForQuestion || busy}
               onClick={trySubmit}
               className="rounded-[12px_18px_14px_18px] border-[2.5px] border-ink bg-ink px-5 py-3 text-base font-extrabold text-white shadow-[4px_4px_0_var(--color-pink)] transition enabled:hover:bg-[#3a2e57] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[2px_2px_0_var(--color-pink)] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none sm:text-lg"
             >
@@ -291,6 +302,38 @@ export function QuizCard({
           )}
         </div>
       </div>
+
+      {timedOut && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/55 px-4">
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="timeout-title"
+            aria-describedby="timeout-desc"
+            className="relative w-full max-w-sm rounded-[28px_20px_30px_18px] border-[2.5px] border-ink bg-paper p-6 text-center shadow-[6px_6px_0_var(--color-pink)] sm:p-7"
+          >
+            <Tape className="-top-3 left-1/2 -translate-x-1/2 rotate-[-4deg]" />
+            <h2
+              id="timeout-title"
+              className="mb-2 font-display text-3xl font-extrabold tracking-[-0.02em] text-alert"
+            >
+              Czas minął!
+            </h2>
+            <p id="timeout-desc" className="mb-6 text-base font-bold text-ink-soft">
+              Pytanie {index + 1} zostało bez odpowiedzi. Quiz trzeba zacząć od nowa —
+              pytania zostaną wylosowane jeszcze raz.
+            </p>
+            <button
+              type="button"
+              autoFocus
+              onClick={onRestart}
+              className="w-full rounded-[18px_12px_18px_14px] border-[2.5px] border-ink bg-pink-deep px-5 py-3.5 text-base font-extrabold text-white shadow-[4px_4px_0_var(--color-ink)] transition hover:bg-pink-press active:translate-x-0.5 active:translate-y-0.5 active:shadow-[2px_2px_0_var(--color-ink)] sm:text-lg"
+            >
+              Zacznij od nowa
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

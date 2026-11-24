@@ -11,7 +11,7 @@ import {
 } from "@/lib/device-metadata";
 import { JoinCard } from "@/components/JoinCard";
 import { QuizCard } from "@/components/QuizCard";
-import { ThankYouCard } from "@/components/ThankYouCard";
+import { SummaryCard } from "@/components/SummaryCard";
 
 type Stage = "join" | "quiz" | "submitting" | "done";
 type Account = { status: "loading" } | { status: "guest" } | { status: "user"; user: User };
@@ -26,6 +26,21 @@ export function QuizFlow() {
   const [stage, setStage] = useState<Stage>("join");
   const [error, setError] = useState<string | null>(null);
   const [questions, setQuestions] = useState<DbQuestion[] | null>(null);
+  /** Bumped on restart → QuizCard remounts with fresh index/answers/timer. */
+  const [attempt, setAttempt] = useState(0);
+
+  /** Time ran out unanswered: reshuffle and start again from question 1. */
+  const restartQuiz = useCallback(() => {
+    setError(null);
+    setQuestions((prev) => {
+      if (!prev) return prev;
+      const next = prev.map((q) => ({ ...q, options: q.options ? [...q.options] : q.options }));
+      shuffleArr(next);
+      next.forEach((q) => shuffleArr(q.options || []));
+      return next;
+    });
+    setAttempt((a) => a + 1);
+  }, []);
 
   // Session shared with 1lounge (cookie on the common domain). Anonymous
   // sessions left over from an earlier attempt don't count as an account.
@@ -48,6 +63,32 @@ export function QuizFlow() {
   }, []);
 
   const accountUser = account.status === "user" ? account.user : null;
+  const accountId = accountUser?.id ?? null;
+
+  // Already finished on this account (finished_quizes row) → the start button
+  // becomes "Zobacz podsumowanie" (no auto-jump; right after a quiz we do jump).
+  const [finishedCheckedFor, setFinishedCheckedFor] = useState<string | null>(null);
+  const [finishedFor, setFinishedFor] = useState<string | null>(null);
+  useEffect(() => {
+    if (!accountId) return;
+    let cancelled = false;
+    getSupabase()
+      .from("finished_quizes")
+      .select("user_id")
+      .eq("user_id", accountId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return;
+        setFinishedFor(data ? accountId : null);
+        setFinishedCheckedFor(accountId);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [accountId]);
+  const checkingFinished = !!accountId && finishedCheckedFor !== accountId;
+  const alreadyFinished = !!accountId && finishedFor === accountId;
+  const showSummary = useCallback(() => setStage("done"), []);
 
   /**
    * Step 1–3 of the flow: account -> profile row -> fetch questions.
@@ -61,8 +102,21 @@ export function QuizFlow() {
       const uid = accountUser?.id;
       if (!uid) throw new Error("Zaloguj się, żeby zagrać.");
 
-      // A real account can come back later: one attempt per account
-      // (profiles PK + one answer per question).
+      // One attempt per account. "Finished" = a finished_quizes row, which the
+      // check_if_finished_quiz trigger adds once every question has an answer.
+      const { data: finished, error: finishedReadError } = await supabase
+        .from("finished_quizes")
+        .select("user_id")
+        .eq("user_id", uid)
+        .maybeSingle();
+      if (finishedReadError) throw finishedReadError;
+      if (finished) {
+        // Already done on this account → show the summary instead of a new attempt.
+        setStage("done");
+        return;
+      }
+
+      // Profile may already exist from an earlier, unfinished visit (profiles PK).
       const { data: existingProfile, error: profileReadError } = await supabase
         .from("profiles")
         .select("user_id")
@@ -70,16 +124,7 @@ export function QuizFlow() {
         .maybeSingle();
       if (profileReadError) throw profileReadError;
 
-      if (existingProfile) {
-        const { count, error: answersReadError } = await supabase
-          .from("user_answers")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", uid);
-        if (answersReadError) throw answersReadError;
-        if ((count ?? 0) > 0) {
-          throw new Error("Ten quiz został już rozwiązany na tym koncie.");
-        }
-      } else {
+      if (!existingProfile) {
         const baseMeta = collectDeviceMetadata();
         const meta = await enrichDeviceMetadata(baseMeta);
         const { error: profileError } = await supabase.from("profiles").insert({
@@ -161,7 +206,7 @@ export function QuizFlow() {
     }
   }, []);
 
-  if (stage === "done") return <ThankYouCard />;
+  if (stage === "done" && accountId) return <SummaryCard userId={accountId} />;
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center px-4 py-10 sm:py-16">
@@ -178,13 +223,21 @@ export function QuizFlow() {
           <JoinCard
             onStart={startQuiz}
             onSignOut={signOut}
-            loading={account.status === "loading"}
+            finished={alreadyFinished}
+            onShowSummary={showSummary}
+            loading={account.status === "loading" || checkingFinished}
             accountName={accountUser ? displayName(accountUser) : null}
             accountEmail={accountUser?.email ?? null}
           />
         )}
         {stage !== "join" && questions && (
-          <QuizCard questions={questions} busy={stage === "submitting"} onSubmit={submitQuiz} />
+          <QuizCard
+            key={attempt}
+            questions={questions}
+            busy={stage === "submitting"}
+            onSubmit={submitQuiz}
+            onRestart={restartQuiz}
+          />
         )}
       </div>
     </div>

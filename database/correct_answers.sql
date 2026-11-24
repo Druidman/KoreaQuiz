@@ -52,9 +52,9 @@ with check (false);
 
 
 -- this is intentional
-create policy "correct_answers - no one can view"
+create policy "correct_answers - only finished can view"
 on public.correct_answers
 as permissive
 for select
 to authenticated
-using (false);
+using (exists(select 1 from public.finished_quizes fq where fq.user_id=auth.uid()));
